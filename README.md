@@ -7,5 +7,5 @@ Julia implementation of Manchester Coding for communication
 # Usage
 See:
 ```
-test.jl
+demo.jl
 ```

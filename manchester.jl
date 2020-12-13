@@ -43,48 +43,114 @@ struct Decoded
     method::String
 end
 
+
+function _parser(data, n)
+
+     return data[1:n], data[n+1:end]
+end
+
+function _findall(pattern,string::AbstractString)
+    toReturn = UnitRange{Int64}[]
+    s = 1
+    while true
+
+        range = findnext(pattern,string,s)
+        if range == nothing
+             break
+        else
+            push!(toReturn, range)
+            s = first(range)+1
+        end
+    end
+    return toReturn
+end
+
 function encode(data, encoding=options.main; args=nothing)
-    value = Array
-    try
-        value = [options.bit_map[encoding][string(i)] for i = data]
-    catch e
-        println("$e is not a valid encoding method")
+
+    method = options.bit_map[encoding]
+
+    encoded = []
+
+    while length(data) > 0
+
+        bit, data = _parser(data, 1)
+
+        value = method[bit]
+
+        push!(encoded, value)
+
     end
 
-    result = Encoded(join(value), encoding)
+    encoded = join(encoded)
+
+    result = Encoded(encoded, encoding)
 
     return result
 end
 
-
-
 function decode(data, encoding=options.main; args=nothing)
 
-    # Make sure encoded data is even
-    if (length(data) % 2 != 0)
+    errors = Dict([i=>_findall(i, data) for (i) = ["000","111"]])
 
-        return nothing
+    method = options.bit_map[encoding]
+
+    bits = []
+
+    while length(data) > 0
+
+        bit, data = _parser(data, 2)
+
+        push!(bits, bit)
     end
 
+    decoded = []
+
+    parity = []
+
+    for (i) = bits
+        if length(i)%2!=0
+            push!(parity, nothing)
+            break
+        end
+        if i[1] == i[2]
+            push!(parity, false)
 
 
-    value = [options.bit_map["decode"][string(data[Integer(k*2)-1], data[Integer(k*2)])]  for (k) in 1:(length(data))/2]
+        else
+            push!(parity, true)
 
-
-    if (encoding) == "invert"
-        v = []
-        for (i) = value
-            if (i == "1")
-                push!(v, string("0") )
-            end
-
-            if (i == "0")
-                push!(v, string("1" ))
-            end
         end
 
-        value = v
     end
-    result = Decoded(join(value), encoding)
-    return result
+
+    for (i) = bits
+
+        bit = ""
+        if (encoding) == "invert"
+            if (i) == "01"
+                bit = "1"
+            end
+            if (i) == "10"
+                bit = "0"
+            end
+
+        elseif (encoding) == "normal"
+            if (i) == "01"
+                bit = "0"
+            end
+            if (i) == "10"
+                bit = "1"
+            end
+        else
+            bit = ""
+        end
+
+
+
+        push!(decoded, bit)
+    end
+
+    decoded = join(decoded)
+
+    result = Encoded(decoded, encoding)
 end
