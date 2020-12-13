@@ -25,6 +25,10 @@ Dict(
     "differential"=>Dict(
     "0"=>"01"
 
+    ),
+    "decode"=>Dict(
+    "01"=>"0",
+    "10"=>"1"
     )
 )
 )
@@ -62,47 +66,25 @@ function decode(data, encoding=options.main; args=nothing)
         return nothing
     end
 
-    g = Dict(
-    "01"=>"0",
-    "10"=>"1"
-    )
 
-    value = [g[string(data[Integer(k*2)-1], data[Integer(k*2)])]  for (k) in 1:(length(data))/2]
 
+    value = [options.bit_map["decode"][string(data[Integer(k*2)-1], data[Integer(k*2)])]  for (k) in 1:(length(data))/2]
+
+
+    if (encoding) == "invert"
+        v = []
+        for (i) = value
+            if (i == "1")
+                push!(v, string("0") )
+            end
+
+            if (i == "0")
+                push!(v, string("1" ))
+            end
+        end
+
+        value = v
+    end
     result = Decoded(join(value), encoding)
     return result
 end
-
-
-#### Test Area ####
-# String (UTF-8) to Binary: Hello, World!
-test = "01001000011001010110110001101100011011110010110000100000010101110110111101110010011011000110010000100001"
-
-encoded = encode(test, "invert")
-println(encoded)
-decoded = decode(encoded.data, encoded.method)
-println(decoded)
-
-# function splitter(data)
-#     return [string(i) for i = data]
-# end
-# function start(data, arg, method="basic")
-#     data = splitter(data)
-#
-#     return join([bit_map[arg][i] for i = data])
-# end
-#
-# println(start(test, "basic"))
-#
-# function Man_Decode(data)
-#
-# function joiner(data)
-#     return [bit_map[string(i)] for i = data]
-# end
-#
-# # arr = splitter(test)
-# #
-# # # println(summary(arr[end]))
-# # arr = joiner(arr)
-# # arr = join(arr)
-# # println(arr)
